@@ -1,0 +1,6 @@
+*.pyc
+*.swp
+build
+dist
+rackattack.egg-info
+images.fortests
