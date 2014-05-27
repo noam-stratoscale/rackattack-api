@@ -29,6 +29,10 @@ class VM:
     def ipAddress(self):
         network.ipAddressFromVMIndex(self._index)
 
+    def initialStart(self):
+        pass
+#        wait for inaugurator ready event
+
     @classmethod
     def create(cls, index, requirement):
         name = cls._nameFromIndex(index)
@@ -43,8 +47,7 @@ class VM:
         mani = manifest.Manifest.create(
             name=name,
             memoryMB=int(1024 * hardwareConstraints['minimumRAMGB']),
-            vcpus=hardwareConstraints['minimumCPUs'] \
-                if hardwareConstraints['minimumCPUs'] is not None else 1,
+            vcpus=hardwareConstraints['minimumCPUs'],
             disk1Image=image1,
             disk2Image=image2,
             primaryMACAddress=network.primaryMACAddressFromVMIndex(index),
@@ -53,6 +56,7 @@ class VM:
             serialOutputFilename=serialLog)
         with libvirtsingleton.it().lock():
             domain = libvirtsingleton.it().libvirt().defineXML(mani.xml())
+            domain.create()
         return cls(
             index=index, domain=domain, manifest=mani,
             imageLabel=requirement['imageLabel'],

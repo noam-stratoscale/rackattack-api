@@ -14,20 +14,21 @@ class Test(unittest.TestCase):
 
     def test_it(self):
         self.client = self.server.createClient()
-        with self.assertRaises(api.NotEnoughResourcesForAllocation):
-            self.allocate()
+        node = self.allocate()
+        try:
+            node.initialStart()
+        finally:
+            node.unallocate()
 
     def allocate(self):
-        self.assertEquals(self.server.MAXIMUM_VMS, 4)
-        self.client.allocate(
-            requirements={'node%d' % i: api.Requirement(
-                imageLabel="rootfs-basic", imageHint="basic")
-                for i in xrange(1, self.server.MAXIMUM_VMS + 2)},
+        result = self.client.allocate(
+            requirements={'node1': api.Requirement(
+                imageLabel="rootfs-basic", imageHint="basic")},
             allocationInfo=api.AllocationInfo(
-                user="whitebox",
-                purpose="whitebox",
-                nice=0),
+                user="whitebox", purpose="whitebox", nice=0),
             forceReleaseCallback=self.forceReleaseMustNotBeCalled)
+        self.assertEquals(len(result), 1)
+        return result['node1']
 
     def forceReleaseMustNotBeCalled(self):
         self.assertTrue(False, "Force release must not be called")

@@ -9,8 +9,11 @@ class VMs:
     def create(self, requirement):
         self._index += 1
         theVM = vm.VM.create(index=self._index, requirement=requirement)
-        self._vms[self._index] = theVM
+        self._vms[theVM.id()] = theVM
         return theVM
+
+    def byID(self, id):
+        return self._vms[id]
 
     def inUse(self):
 #todo: not implmeneted"

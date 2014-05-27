@@ -30,6 +30,10 @@ class IPCServer(threading.Thread):
 ####
         pass
 
+    def _cmd_initialStart(self, id):
+        vm = self._vms.byID(id)
+        vm.initialStart()
+
     def run(self):
         try:
             while True:

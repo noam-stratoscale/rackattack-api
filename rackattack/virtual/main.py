@@ -6,8 +6,12 @@ from rackattack.virtual import ipcserver
 from rackattack.virtual.kvm import vms
 from rackattack.virtual.kvm import cleanup
 from rackattack.virtual import allocator
+import rackattack.virtual.handlekill
 from rackattack.virtual.kvm import config
 from rackattack.virtual.kvm import network
+from rackattack.common import dnsmasq
+from rackattack.common import tftpboot
+import atexit
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--port", default=1011, type=int)
@@ -24,7 +28,16 @@ if args.serialLogsDirectory:
     config.SERIAL_LOGS_DIRECTORY = args.serialLogsDirectory
 
 cleanup.cleanup()
+atexit.register(cleanup.cleanup)
 network.setUp()
+tfpbootInstance = tftpboot.TFTPBoot(network.allNodesMACs())
+dnsmasq.DNSMasq(
+    tftpboot=tfpbootInstance,
+    serverIP=network.GATEWAY_IP_ADDRESS,
+    netmask=network.NETMASK,
+    gateway=network.GATEWAY_IP_ADDRESS,
+    nameserver=network.GATEWAY_IP_ADDRESS,
+    nodesMACIPPairs=network.allNodesMACIPPairs())
 vmsInstance = vms.VMs()
 allocatorInstance = allocator.Allocator(vms=vmsInstance)
 server = ipcserver.IPCServer(tcpPort=args.port, vms=vmsInstance, allocator=allocatorInstance)

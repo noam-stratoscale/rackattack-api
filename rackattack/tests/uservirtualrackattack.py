@@ -13,9 +13,10 @@ class UserVirtualRackAttack:
         imageDir = os.path.join(os.getcwd(), "images.fortests")
         shutil.rmtree(imageDir, ignore_errors=True)
         self._popen = subprocess.Popen(
-            ["python", "rackattack/virtual/main.py",
+            ["sudo", "PYTHONPATH=.", "python", "rackattack/virtual/main.py",
                 "--port=%d" % self._port,
                 "--diskImagesDirectory=" + imageDir,
+                "--serialLogsDirectory=" + imageDir,
                 "--maximumVMs=%d" % self.MAXIMUM_VMS],
             close_fds=True, stderr=subprocess.STDOUT)
         time.sleep(0.1)
@@ -23,7 +24,7 @@ class UserVirtualRackAttack:
     def done(self):
         if self._popen.poll() is not None:
             raise Exception("Virtual RackAttack server terminated before it's time")
-        self._popen.terminate()
+        subprocess.check_call(["sudo", "kill", str(self._popen.pid)], close_fds=True)
         self._popen.wait()
 
     def createClient(self):

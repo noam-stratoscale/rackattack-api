@@ -33,7 +33,7 @@ class Requirement:
         self.imageLabel = imageLabel
         self.imageHint = imageHint
         self.hardwareConstraints = dict(
-            minimumCPUs=None, minimumRAMGB=2,
+            minimumCPUs=1, minimumRAMGB=2,
             minimumDisk1SizeGB=16, minimumDisk2SizeGB=16)
         if hardwareConstraints is not None:
             self.hardwareConstraints.update(hardwareConstraints)

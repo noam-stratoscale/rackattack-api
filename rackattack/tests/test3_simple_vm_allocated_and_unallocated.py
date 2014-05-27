@@ -1,5 +1,5 @@
 import unittest
-from rackattack.tests import testlib
+from rackattack.tests import uservirtualrackattack
 import rackattack
 from rackattack import api
 
@@ -7,7 +7,7 @@ from rackattack import api
 class Test(unittest.TestCase):
     def setUp(self):
         self.assertTrue('/usr/' not in rackattack.__file__)
-        self.server = testlib.UserVirtualRackAttack()
+        self.server = uservirtualrackattack.UserVirtualRackAttack()
 
     def tearDown(self):
         self.server.done()

@@ -10,13 +10,13 @@ class Manifest:
         return xmltodict.unparse(self._dict)
 
     def name(self):
-        return self._dict[ 'domain' ][ 'name' ]
+        return self._dict['domain']['name']
 
     def primaryMACAddress(self):
-        return self._dict[ 'domain' ][ 'devices' ][ 'interface' ][ 0 ][ 'mac' ][ '@address' ]
+        return self._dict['domain']['devices']['interface'][0]['mac']['@address']
 
     def secondaryMACAddress(self):
-        return self._dict[ 'domain' ][ 'devices' ][ 'interface' ][ 1 ][ 'mac' ][ '@address' ]
+        return self._dict['domain']['devices']['interface'][1]['mac']['@address']
 
     @classmethod
     def create(cls,
@@ -32,7 +32,7 @@ class Manifest:
         assert name.startswith(config.DOMAIN_PREFIX)
         assert memoryMB > 0
         assert vcpus >= 1
-        return cls( _TEMPLATE % dict(
+        return cls(_TEMPLATE % dict(
             name=name,
             memoryKB=memoryMB * 1024,
             vcpus=vcpus,
