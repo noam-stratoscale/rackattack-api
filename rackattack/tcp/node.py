@@ -38,7 +38,7 @@ class Node(api.Node):
             assimilatorParameters=assimilatorParameters)
 
     def initialStart(self):
-        return self._ipcClient.call('initialStart', id=self._allocated['id'])
+        return self._ipcClient.call('initialStart', id=self._allocated['id'], ipcTimeoutMS=10 * 60 * 1000)
 
     def coldRestart(self):
         return self._ipcClient.call('coldRestart', id=self._allocated['id'])

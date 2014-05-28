@@ -27,10 +27,6 @@ def allNodesMACIPPairs():
     return [(primaryMACAddressFromVMIndex(i), ipAddressFromVMIndex(i)) for i in xrange(100)]
 
 
-def allNodesMACs():
-    return [x[0] for x in allNodesMACIPPairs()]
-
-
 def setUp():
     with libvirtsingleton.it().lock():
         libvirt = libvirtsingleton.it().libvirt()

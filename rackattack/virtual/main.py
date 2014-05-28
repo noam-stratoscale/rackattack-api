@@ -30,7 +30,10 @@ if args.serialLogsDirectory:
 cleanup.cleanup()
 atexit.register(cleanup.cleanup)
 network.setUp()
-tfpbootInstance = tftpboot.TFTPBoot(network.allNodesMACs())
+tfpbootInstance = tftpboot.TFTPBoot(
+    nodesMACIPPairs=network.allNodesMACIPPairs(),
+    netmask=network.NETMASK,
+    serverIP=network.GATEWAY_IP_ADDRESS)
 dnsmasq.DNSMasq(
     tftpboot=tfpbootInstance,
     serverIP=network.GATEWAY_IP_ADDRESS,
@@ -40,7 +43,10 @@ dnsmasq.DNSMasq(
     nodesMACIPPairs=network.allNodesMACIPPairs())
 vmsInstance = vms.VMs()
 allocatorInstance = allocator.Allocator(vms=vmsInstance)
-server = ipcserver.IPCServer(tcpPort=args.port, vms=vmsInstance, allocator=allocatorInstance)
+server = ipcserver.IPCServer(
+    tcpPort=args.port,
+    vms=vmsInstance,
+    allocator=allocatorInstance)
 logging.info("Virtual RackAttack up and running")
 while True:
     time.sleep(1000 * 1000)

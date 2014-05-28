@@ -26,13 +26,13 @@ class Client(api.Client):
             result[name] = nodeInstance
         return result
 
-    def call(self, cmd, ** kwargs):
+    def call(self, cmd, ipcTimeoutMS=3000, ** kwargs):
         with self._lock:
-            return self._call(cmd, kwargs)
+            return self._call(cmd, ipcTimeoutMS, kwargs)
 
-    def _call(self, cmd, arguments):
+    def _call(self, cmd, ipcTimeoutMS, arguments):
         self._socket.send_json(dict(cmd=cmd, arguments=arguments))
-        hasData = self._socket.poll(timeout=3000)
+        hasData = self._socket.poll(ipcTimeoutMS)
         if not hasData:
             self._context.destroy()
             raise Exception("IPC command '%s' timed out" % cmd)

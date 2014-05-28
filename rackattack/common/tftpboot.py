@@ -5,12 +5,14 @@ import atexit
 
 
 class TFTPBoot:
-    def __init__(self, macs):
+    def __init__(self, nodesMACIPPairs, netmask, serverIP):
+        self._netmask = netmask
+        self._serverIP = serverIP
         self._root = tempfile.mkdtemp(suffix=".tftpboot")
         atexit.register(self._cleanup)
         self._pxelinuxConfigDir = os.path.join(self._root, "pxelinux.cfg")
         self._installPXELinux()
-        self._createConfigurations(macs)
+        self._createConfigurations(nodesMACIPPairs)
 
     def root(self):
         return self._root
@@ -26,15 +28,17 @@ class TFTPBoot:
         os.mkdir(self._pxelinuxConfigDir)
 
     def _createConfigurations(self, macs):
-        for mac in macs:
+        for mac, ip in macs:
             basename = '01-' + mac.replace(':', '-')
             path = os.path.join(self._pxelinuxConfigDir, basename)
-            contents = self._configureInaugurator(mac)
+            contents = self._configureInaugurator(mac, ip)
             with open(path, "w") as f:
                 f.write(contents)
 
-    def _configureInaugurator(self, mac):
-        return _TEMPLATE % dict(macAddress=mac)
+    def _configureInaugurator(self, mac, ip):
+        return _TEMPLATE % dict(
+            macAddress=mac, ipAddress=ip,
+            netmask=self._netmask, osmosisServerIP=self._serverIP)
 
 _TEMPLATE = r"""
 #serial support on port0 (COM1) running baud-rate 115200
@@ -52,5 +56,5 @@ label Latest
     menu label Latest
     kernel inaugurator.vmlinuz
     initrd inaugurator.initrd.img
-    append --macAddress=%(macAddress)s --targetDevice=/dev/sda --targetDevice=/dev/vda
+    append --inauguratorUseNICWithMAC=%(macAddress)s --inauguratorOsmosisHostname=%(osmosisServerIP)s --inauguratorOsmosisLabel=theLabel --inauguratorIPAddress=%(ipAddress)s --inauguratorNetmask=%(netmask)s
 """
