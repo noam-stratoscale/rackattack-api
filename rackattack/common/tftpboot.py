@@ -5,10 +5,11 @@ import atexit
 
 
 class TFTPBoot:
-    def __init__(self, nodesMACIPPairs, netmask, serverIP):
+    def __init__(self, nodesMACIPPairs, netmask, serverIP, rootPassword):
         self._netmask = netmask
         self._serverIP = serverIP
         self._root = tempfile.mkdtemp(suffix=".tftpboot")
+        self._rootPassword = rootPassword
         atexit.register(self._cleanup)
         self._pxelinuxConfigDir = os.path.join(self._root, "pxelinux.cfg")
         self._installPXELinux()
@@ -38,7 +39,8 @@ class TFTPBoot:
     def _configureInaugurator(self, mac, ip):
         return _TEMPLATE % dict(
             macAddress=mac, ipAddress=ip,
-            netmask=self._netmask, osmosisServerIP=self._serverIP)
+            netmask=self._netmask, osmosisServerIP=self._serverIP,
+            rootPassword=self._rootPassword)
 
 _TEMPLATE = r"""
 #serial support on port0 (COM1) running baud-rate 115200
@@ -56,5 +58,5 @@ label Latest
     menu label Latest
     kernel inaugurator.vmlinuz
     initrd inaugurator.initrd.img
-    append --inauguratorUseNICWithMAC=%(macAddress)s --inauguratorOsmosisHostname=%(osmosisServerIP)s --inauguratorOsmosisLabel=theLabel --inauguratorIPAddress=%(ipAddress)s --inauguratorNetmask=%(netmask)s
+    append --inauguratorUseNICWithMAC=%(macAddress)s --inauguratorOsmosisHostname=%(osmosisServerIP)s --inauguratorOsmosisLabel=theLabel --inauguratorIPAddress=%(ipAddress)s --inauguratorNetmask=%(netmask)s --inauguratorChangeRootPassword=%(rootPassword)s
 """

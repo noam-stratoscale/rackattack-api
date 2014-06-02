@@ -33,7 +33,8 @@ network.setUp()
 tfpbootInstance = tftpboot.TFTPBoot(
     nodesMACIPPairs=network.allNodesMACIPPairs(),
     netmask=network.NETMASK,
-    serverIP=network.GATEWAY_IP_ADDRESS)
+    serverIP=network.GATEWAY_IP_ADDRESS,
+    rootPassword=config.ROOT_PASSWORD)
 dnsmasq.DNSMasq(
     tftpboot=tfpbootInstance,
     serverIP=network.GATEWAY_IP_ADDRESS,

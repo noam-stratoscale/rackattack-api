@@ -26,7 +26,7 @@ class Client(api.Client):
             result[name] = nodeInstance
         return result
 
-    def call(self, cmd, ipcTimeoutMS=3000, ** kwargs):
+    def call(self, cmd, ipcTimeoutMS=10000, ** kwargs):
         with self._lock:
             return self._call(cmd, ipcTimeoutMS, kwargs)
 
