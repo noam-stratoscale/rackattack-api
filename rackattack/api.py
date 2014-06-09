@@ -1,7 +1,3 @@
-class NotEnoughResourcesForAllocation(Exception):
-    pass
-
-
 class Client:
     """
     To create a client:
@@ -12,10 +8,10 @@ class Client:
     variables defined in the environment. Look inside clientfactory
     for more details
     """
-    def allocate(self, requirements, allocationInfo, forceReleaseCallback):
+    def allocate(self, requirements, allocationInfo):
         """
         This method receives a dict from names of nodes, to their requirements,
-        and returns a matching map with a Node instance for each node name, or
+        and returns an allocation object.
         throws NotEnoughResourcesForAllocation.
         """
         assert False, "Deriving class must implement"
@@ -65,19 +61,60 @@ class AllocationInfo:
         self.comment = comment
 
 
+class Allocation:
+    """
+    This object is returned from the Client.allocate method
+    """
+    def done(self):
+        """
+        This method tests if the allocation is done. If true,
+        the client application may start using the nodes.
+        """
+        assert False, "Deriving class must implement"
+
+    def dead(self):
+        """
+        This method returns true if the allocation is still in progress
+        or done. If the allocation failed, or was previously freed,
+        this method will return a string with the reason for the allocation
+        death
+        """
+        assert False, "Deriving class must implement"
+
+    def wait(self, timeout=None):
+        """
+        wait until allocation is either done (and return), or dead,
+        in which case an exception will be raised with the death
+        reason
+        """
+        assert False, "Deriving class must implement"
+
+    def nodes(self):
+        """
+        the client application may only call this method if
+        done returned True, and dead returns None. It will return
+        a dictionary from the requirement names, as provided to
+        allocate, to a Node object
+        """
+        assert False, "Deriving class must implement"
+
+    def free(self):
+        """
+        free the allocation. After this was called, the application
+        may not use any of the nodes returned previously by the nodes
+        method, or call nodes again
+        """
+        assert False, "Deriving class must implement"
+
+    def setForceReleaseCallback(self, callback):
+        assert False, "Deriving class must implement"
+
+
 class Node:
     def rootSSHCredentials(self):
         """
         returns a dictionary with: hostname, username == root, either password or key,
         and port == 22. Useful to pass as **kwargs to SSH class
-        """
-        assert False, "Deriving class must implement"
-
-    def unallocate(self):
-        """
-        Physical provisioning should also have policy to garbage collent nodes
-        from crashed tests. After call this method, this object might not be
-        used again.
         """
         assert False, "Deriving class must implement"
 
@@ -97,14 +134,6 @@ class Node:
         assert False, "Deriving class must implement"
 
     def setPXEParameters(self, answerDHCP=True, assimilatorParameters=None):
-        assert False, "Deriving class must implement"
-
-    def initialStart(self):
-        """
-        Initial start: reboot/kexec a physical node or start the VM
-        should be called exactly once after allocation, possibly after
-        calling setPXEParameters
-        """
         assert False, "Deriving class must implement"
 
     def coldRestart(self):

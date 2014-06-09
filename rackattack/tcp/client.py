@@ -1,32 +1,34 @@
 import zmq
 from rackattack import api
 import threading
-from rackattack.tcp import node
+from rackattack.tcp import allocation
+from rackattack.tcp import heartbeat
+from rackattack.tcp import subscribe
 
 
 class Client(api.Client):
-    def __init__(self, connectTo):
+    def __init__(self, providerRequestLocation, providerSubscribeLocation):
         self._context = zmq.Context()
         self._socket = self._context.socket(zmq.REQ)
-        self._socket.connect(connectTo)
+        self._socket.connect(providerRequestLocation)
         self._socket.setsockopt(zmq.LINGER, 0)
         self._lock = threading.Lock()
+        self._subscribe = subscribe.Subscribe(connectTo=providerSubscribeLocation)
+        self._heartbeat = heartbeat.HeartBeat(self)
 
-    def allocate(self, requirements, allocationInfo, forceReleaseCallback):
+    def allocate(self, requirements, allocationInfo):
         assert len(requirements) > 0
         jsonableRequirements = {
             name: requirement.__dict__ for name, requirement in requirements.iteritems()}
-        allocatedMap = self.call(
+        allocationID = self.call(
             cmd='allocate',
             requirements=jsonableRequirements,
             allocationInfo=allocationInfo.__dict__)
-        result = {}
-        for name, allocated in allocatedMap.iteritems():
-            nodeInstance = node.Node(ipcClient=self, name=name, allocated=allocated)
-            result[name] = nodeInstance
-        return result
+        return allocation.Allocation(
+            id=allocationID, requirements=requirements, ipcClient=self,
+            subscribe=self._subscribe, heartbeat=self._heartbeat)
 
-    def call(self, cmd, ipcTimeoutMS=10000, ** kwargs):
+    def call(self, cmd, ipcTimeoutMS=3000, ** kwargs):
         with self._lock:
             return self._call(cmd, ipcTimeoutMS, kwargs)
 

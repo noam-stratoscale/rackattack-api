@@ -1,20 +1,27 @@
 import logging
 logging.basicConfig(level=logging.DEBUG)
+from rackattack.ssh import connection
+connection.discardParamikoLogs()
+connection.discardSSHDebugMessages()
 import time
 import argparse
 from rackattack.virtual import ipcserver
-from rackattack.virtual.kvm import vms
 from rackattack.virtual.kvm import cleanup
-from rackattack.virtual import allocator
 import rackattack.virtual.handlekill
 from rackattack.virtual.kvm import config
 from rackattack.virtual.kvm import network
 from rackattack.common import dnsmasq
 from rackattack.common import tftpboot
+from rackattack.common import hosts
+from rackattack.common import inaugurate
+from rackattack.common import timer
+from rackattack.virtual.alloc import allocations
+from rackattack.tcp import publish
 import atexit
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--port", default=1011, type=int)
+parser.add_argument("--requestPort", default=1014, type=int)
+parser.add_argument("--subscribePort", default=1015, type=int)
 parser.add_argument("--maximumVMs", type=int)
 parser.add_argument("--diskImagesDirectory")
 parser.add_argument("--serialLogsDirectory")
@@ -29,25 +36,29 @@ if args.serialLogsDirectory:
 
 cleanup.cleanup()
 atexit.register(cleanup.cleanup)
+timer.TimersThread()
 network.setUp()
-tfpbootInstance = tftpboot.TFTPBoot(
-    nodesMACIPPairs=network.allNodesMACIPPairs(),
+tftpbootInstance = tftpboot.TFTPBoot(
     netmask=network.NETMASK,
     serverIP=network.GATEWAY_IP_ADDRESS,
     rootPassword=config.ROOT_PASSWORD)
-dnsmasq.DNSMasq(
-    tftpboot=tfpbootInstance,
+dnsmasqInstance = dnsmasq.DNSMasq(
+    tftpboot=tftpbootInstance,
     serverIP=network.GATEWAY_IP_ADDRESS,
     netmask=network.NETMASK,
+    firstIP=network.FIRST_IP,
+    lastIP=network.LAST_IP,
     gateway=network.GATEWAY_IP_ADDRESS,
-    nameserver=network.GATEWAY_IP_ADDRESS,
-    nodesMACIPPairs=network.allNodesMACIPPairs())
-vmsInstance = vms.VMs()
-allocatorInstance = allocator.Allocator(vms=vmsInstance)
-server = ipcserver.IPCServer(
-    tcpPort=args.port,
-    vms=vmsInstance,
-    allocator=allocatorInstance)
+    nameserver=network.GATEWAY_IP_ADDRESS)
+for mac, ip in network.allNodesMACIPPairs():
+    dnsmasqInstance.add(mac, ip)
+hostsInstance = hosts.Hosts()
+inaugurateInstance = inaugurate.Inaugurate(bindHostname=network.GATEWAY_IP_ADDRESS)
+publishInstance = publish.Publish(tcpPort=args.subscribePort)
+allocationsInstance = allocations.Allocations(
+    tftpboot=tftpbootInstance, inaugurate=inaugurateInstance,
+    hosts=hostsInstance, broadcaster=publishInstance)
+server = ipcserver.IPCServer(tcpPort=args.requestPort, allocations=allocationsInstance)
 logging.info("Virtual RackAttack up and running")
 while True:
     time.sleep(1000 * 1000)

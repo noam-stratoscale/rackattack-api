@@ -1,5 +1,5 @@
 import unittest
-from rackattack.tests import uservirtualrackattack
+from tests import uservirtualrackattack
 import rackattack
 
 
@@ -12,7 +12,7 @@ class Test(unittest.TestCase):
         self.server.done()
 
     def test_emptyConnection(self):
-        client = self.server.createClient()
+        self.server.createClient()
 
 if __name__ == '__main__':
     unittest.main()

@@ -3,23 +3,29 @@ import os
 import shutil
 import time
 from rackattack import clientfactory
+from tests import testlib
+import rackattack
 
 
 class UserVirtualRackAttack:
     MAXIMUM_VMS = 4
 
     def __init__(self):
-        self._port = 3443
+        assert '/usr' not in rackattack.__file__
+        self._requestPort = 3443
+        self._subscribePort = 3444
         imageDir = os.path.join(os.getcwd(), "images.fortests")
         shutil.rmtree(imageDir, ignore_errors=True)
         self._popen = subprocess.Popen(
             ["sudo", "PYTHONPATH=.", "python", "rackattack/virtual/main.py",
-                "--port=%d" % self._port,
+                "--requestPort=%d" % self._requestPort,
+                "--subscribePort=%d" % self._subscribePort,
                 "--diskImagesDirectory=" + imageDir,
                 "--serialLogsDirectory=" + imageDir,
                 "--maximumVMs=%d" % self.MAXIMUM_VMS],
             close_fds=True, stderr=subprocess.STDOUT)
-        time.sleep(0.1)
+        testlib.waitForTCPServer(('localhost', self._requestPort))
+        time.sleep(0.5)  # dnsmasq needs to be able to receive a SIGHUP
 
     def done(self):
         if self._popen.poll() is not None:
@@ -28,5 +34,6 @@ class UserVirtualRackAttack:
         self._popen.wait()
 
     def createClient(self):
-        os.environ['RACKATTACK_PROVIDER'] = 'tcp://localhost:%d' % self._port
+        os.environ['RACKATTACK_PROVIDER'] = 'tcp://localhost:%d@tcp://localhost:%d' % (
+            self._requestPort, self._subscribePort)
         return clientfactory.factory()

@@ -7,31 +7,49 @@ import os
 
 
 class VM:
-    def __init__(self, index, domain, manifest, imageLabel, imageHint):
+    def __init__(self, index, domain, manifest, disk1SizeGB, disk2SizeGB):
         self._index = index
         self._domain = domain
         self._manifest = manifest
-        self._imageLabel = imageLabel
-        self._imageHint = imageHint
+        self._disk1SizeGB = disk1SizeGB
+        self._disk2SizeGB = disk2SizeGB
 
     def index(self):
         return self._index
 
     def id(self):
-        return self._manifest.name()
+        return self._nameFromIndex(self._index)
 
     def primaryMACAddress(self):
-        return self._manifest.primaryMACAddress()
+        return network.primaryMACAddressFromVMIndex(self._index)
 
     def secondaryMACAddress(self):
-        return self._manifest.secondaryMACAddress()
+        return network.secondMACAddressFromVMIndex(self._index)
 
     def ipAddress(self):
-        network.ipAddressFromVMIndex(self._index)
+        return network.ipAddressFromVMIndex(self._index)
 
-    def initialStart(self):
-        pass
-#        wait for inaugurator ready event
+    def rootSSHCredentials(self):
+        return dict(hostname=self.ipAddress(), username="root", password=config.ROOT_PASSWORD)
+
+    def coldRestart(self):
+        with libvirtsingleton.it().lock():
+            self._domain.destroy()
+            self._domain.create()
+
+    def destroy(self):
+        with libvirtsingleton.it().lock():
+            self._domain.destroy()
+            self._domain.undefine()
+        os.unlink(self._manifest.disk1Image())
+        os.unlink(self._manifest.disk2Image())
+
+    def fulfillsRequirement(self, requirement):
+        hardwareConstraints = requirement['hardwareConstraints']
+        return self._manifest.vcpus() >= hardwareConstraints['minimumCPUs'] and \
+            self._manifest.memoryMB() >= hardwareConstraints['minimumRAMGB'] * 1024 and \
+            self._disk1SizeGB >= hardwareConstraints['minimumDisk1SizeGB'] and \
+            self._disk2SizeGB >= hardwareConstraints['minimumDisk2SizeGB']
 
     @classmethod
     def create(cls, index, requirement):
@@ -59,8 +77,8 @@ class VM:
             domain.create()
         return cls(
             index=index, domain=domain, manifest=mani,
-            imageLabel=requirement['imageLabel'],
-            imageHint=requirement['imageHint'])
+            disk1SizeGB=hardwareConstraints['minimumDisk1SizeGB'],
+            disk2SizeGB=hardwareConstraints['minimumDisk2SizeGB'])
 
     @classmethod
     def _nameFromIndex(cls, index):

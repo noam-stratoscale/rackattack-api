@@ -4,3 +4,5 @@ build
 dist
 rackattack.egg-info
 images.fortests
+.coverage
+attic

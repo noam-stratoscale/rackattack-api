@@ -13,6 +13,10 @@ def ipAddressFromVMIndex(index):
     return _IP_ADDRESS_FORMAT % (10 + index)
 
 
+FIRST_IP = ipAddressFromVMIndex(0)
+LAST_IP = ipAddressFromVMIndex(100)
+
+
 def primaryMACAddressFromVMIndex(index):
     assert index < (1 << 16)
     return "52:54:00:00:%02X:%02X" % (int(index / 256), index % 256)

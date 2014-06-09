@@ -21,34 +21,48 @@ class DNSMasq(threading.Thread):
                 logging.info("Done killing previous instances of dnsmasq")
                 return
 
-    def __init__(self, tftpboot, serverIP, nodesMACIPPairs, netmask, gateway=None, nameserver=None):
+    def __init__(self, tftpboot, serverIP, netmask, firstIP, lastIP, gateway=None, nameserver=None):
         self._tftpboot = tftpboot
-        self._nodesMACIPPairs = nodesMACIPPairs
+        self._nodesMACIPPairs = []
         self._netmask = netmask
+        self._firstIP = firstIP
+        self._lastIP = lastIP
         self._gateway = gateway
         self._nameserver = nameserver
         self.killPrevious()
         self._logFile = tempfile.NamedTemporaryFile(suffix=".dnsmasq.log")
         self._configFile = self._configurationFile()
+        self._hostsFile = tempfile.NamedTemporaryFile(suffix=".dnsmasq.hosts")
+        self._writeHostsFile()
         self._stopped = False
         self._popen = subprocess.Popen(
             ['dnsmasq', '--no-daemon', '--listen-address=' + serverIP,
-                '--conf-file=' + self._configFile.name],
+                '--conf-file=' + self._configFile.name, '--dhcp-hostsfile=' + self._hostsFile.name],
             stdout=self._logFile, stderr=subprocess.STDOUT, close_fds=True)
         atexit.register(self._exit)
         threading.Thread.__init__(self)
         self.daemon = True
         threading.Thread.start(self)
 
+    def add(self, mac, ip):
+        self._nodesMACIPPairs.append((mac, ip))
+        self._writeHostsFile()
+        os.kill(self._popen.pid, signal.SIGHUP)
+
+    def _writeHostsFile(self):
+        hosts = ['%s,%s,infinite' % (mac.lower(), ip) for mac, ip in self._nodesMACIPPairs]
+        self._hostsFile.seek(0)
+        self._hostsFile.truncate()
+        self._hostsFile.write("\n".join(hosts))
+        self._hostsFile.flush()
+
     def _configurationFile(self):
         conf = tempfile.NamedTemporaryFile(suffix=".dnsmasq.conf")
-        hosts = ['dhcp-host=%s,%s,infinite' % (mac.lower(), ip) for mac, ip in self._nodesMACIPPairs]
         gateway = 'dhcp-option=option:router,%s' % self._gateway if self._gateway is not None else ""
         nameserver = 'dhcp-option=6,%s' % self._nameserver if self._nameserver is not None else ""
-        ips = [m[1] for m in self._nodesMACIPPairs]
         output = _TEMPLATE % dict(
-            hosts="\n".join(hosts), netmask=self._netmask, gateway=gateway, nameserver=nameserver,
-            tftpbootRoot=self._tftpboot.root(), firstIPAddress=min(ips), lastIPAddress=max(ips))
+            netmask=self._netmask, gateway=gateway, nameserver=nameserver,
+            tftpbootRoot=self._tftpboot.root(), firstIPAddress=self._firstIP, lastIPAddress=self._lastIP)
         conf.write(output)
         conf.flush()
         return conf
@@ -78,7 +92,6 @@ _TEMPLATE = \
     'dhcp-no-override\n' + \
     '%(gateway)s\n' + \
     '%(nameserver)s\n' + \
-    '%(hosts)s\n' + \
     'dhcp-ignore=tag:!known\n' + \
     'pxe-prompt="Press F8 for boot menu", 1\n' + \
     'pxe-service=X86PC, "Boot from network", pxelinux\n' + \

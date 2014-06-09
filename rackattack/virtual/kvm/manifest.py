@@ -12,11 +12,24 @@ class Manifest:
     def name(self):
         return self._dict['domain']['name']
 
+    def vcpus(self):
+        return int(self._dict['domain']['vcpu']['#text'])
+
+    def memoryMB(self):
+        assert self._dict['domain']['currentMemory']['@unit'] == "KiB"
+        return int(self._dict['domain']['currentMemory']['#text']) / 1024
+
     def primaryMACAddress(self):
         return self._dict['domain']['devices']['interface'][0]['mac']['@address']
 
     def secondaryMACAddress(self):
         return self._dict['domain']['devices']['interface'][1]['mac']['@address']
+
+    def disk1Image(self):
+        return self._dict['domain']['devices']['disk'][0]['source']['@file']
+
+    def disk2Image(self):
+        return self._dict['domain']['devices']['disk'][1]['source']['@file']
 
     @classmethod
     def create(cls,
