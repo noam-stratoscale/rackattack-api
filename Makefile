@@ -12,10 +12,12 @@ unittest:
 
 WHITEBOXTESTS=$(shell find tests -name 'test_*.py' | sed 's@/@.@g' | sed 's/\(.*\)\.py/\1/' | sort)
 whiteboxtest:
-	PYTHONPATH=. RACKATTACK_IMAGELABEL=theLabel python -m unittest $(WHITEBOXTESTS)
+	test "$$RACKATTACK_IMAGELABEL" != ""
+	PYTHONPATH=. python -m unittest $(WHITEBOXTESTS)
 
 testone:
-	PYTHONPATH=. RACKATTACK_IMAGELABEL=theLabel python tests/test$(NUMBER)_*.py
+	test "$$RACKATTACK_IMAGELABEL" != ""
+	PYTHONPATH=. python tests/test$(NUMBER)_*.py
 
 check_convention:
 	pep8 rackattack --max-line-length=109
