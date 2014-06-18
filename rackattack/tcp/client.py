@@ -13,6 +13,7 @@ class Client(api.Client):
         self._socket.connect(providerRequestLocation)
         self._socket.setsockopt(zmq.LINGER, 0)
         self._lock = threading.Lock()
+        self.call("handshake", version=api.VERSION)
         self._subscribe = subscribe.Subscribe(connectTo=providerSubscribeLocation)
         self._heartbeat = heartbeat.HeartBeat(self)
 

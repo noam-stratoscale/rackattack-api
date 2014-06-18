@@ -1,3 +1,6 @@
+VERSION = 1
+
+
 class Client:
     """
     To create a client:
