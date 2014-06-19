@@ -21,7 +21,7 @@ class Client:
 
 
 class Requirement:
-    def __init__(self, imageLabel, imageHint=None, hardwareConstraints=None):
+    def __init__(self, imageLabel, imageHint, hardwareConstraints=None):
         """
         Describes what is expected of the allocated node.
         imageLabel is the name of the label to osmos into the node, or None
