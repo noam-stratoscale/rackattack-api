@@ -18,7 +18,7 @@ class HeartBeat(threading.Thread):
         assert id not in self._ids
         self._ids.append(id)
 
-    def unregsiter(self, id):
+    def unregister(self, id):
         assert id in self._ids
         self._ids.remove(id)
 

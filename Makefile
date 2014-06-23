@@ -1,4 +1,4 @@
 all: check_convention
 
 check_convention:
-	pep8 rackattack --max-line-length=109
+	pep8 py --max-line-length=109

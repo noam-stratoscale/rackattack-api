@@ -1,6 +1,7 @@
 from rackattack import api
 from rackattack.tcp import node
 import threading
+import logging
 
 
 class Allocation(api.Allocation):
@@ -16,6 +17,7 @@ class Allocation(api.Allocation):
         self._heartbeat.register(id)
         if self.dead() or self.done():
             self._waitEvent.set()
+        logging.info("allocation created")
 
     def _idForNodeIPC(self):
         assert not self._dead
@@ -51,8 +53,10 @@ class Allocation(api.Allocation):
         return result
 
     def free(self):
+        logging.info("freeing allocation")
         self._ipcClient.call('allocation__free', id=self._id)
         self._dead = True
+        self._heartbeat.unregister(self._id)
 
     def setForceReleaseCallback(self, callback):
         raise NotImplementedError("here")
