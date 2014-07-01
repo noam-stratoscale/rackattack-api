@@ -63,5 +63,8 @@ class Allocation(api.Allocation):
 
     def _eventBroadcasted(self, event):
         if event.get('event', None) == "allocation__changedState" and \
-                event.get('allocationID') == self._id:
+                event.get('allocationID', None) == self._id:
             self._waitEvent.set()
+        if event.get('event', None) == "allocation__providerMessage" and \
+                event.get('allocationID', None) == self._id:
+            logging.info("Rackattack provider says: %(message)s", dict(message=event['message']))

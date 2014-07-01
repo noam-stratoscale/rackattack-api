@@ -11,5 +11,8 @@ class Publish:
     def allocationChangedState(self, allocationID):
         self._publish(event='allocation__changedState', allocationID=allocationID)
 
+    def allocationProviderMessage(self, allocationID, message):
+        self._publish(event='allocation__providerMessage', allocationID=allocationID, message=message)
+
     def _publish(self, ** kwargs):
         self._socket.send_json(kwargs)
