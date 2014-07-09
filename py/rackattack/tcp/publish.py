@@ -2,8 +2,8 @@ import zmq
 
 
 class Publish:
-    def __init__(self, tcpPort):
-        self._bindTo = "tcp://127.0.0.1:%d" % tcpPort
+    def __init__(self, tcpPort, localhostOnly):
+        self._bindTo = "tcp://%s:%d" % ("127.0.0.1" if localhostOnly else "*", tcpPort)
         self._context = zmq.Context()
         self._socket = self._context.socket(zmq.PUB)
         self._socket.bind(self._bindTo)
