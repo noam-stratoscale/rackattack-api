@@ -39,7 +39,7 @@ class Client(api.Client):
         if not hasData:
             self._context.destroy()
             raise Exception("IPC command '%s' timed out" % cmd)
-        result = self._socket.recv_json()
+        result = self._socket.recv_json(zmq.NOBLOCK)
         if isinstance(result, dict) and 'exceptionType' in result:
             if result['exceptionType'] == 'NotEnoughResourcesForAllocation':
                 raise api.NotEnoughResourcesForAllocation(result['exceptionString'])

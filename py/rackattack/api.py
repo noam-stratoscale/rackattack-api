@@ -56,7 +56,8 @@ class AllocationInfo:
         nice value: if you are writing a gready system, for example,
         a system for using as many free nodes as possible to run as
         many concurrent tests as possible, make sure to use increment
-        this value for each additional allocation.
+        this value for each additional allocation. expected values
+        are between 0 and 1.
         """
         self.user = user
         self.purpose = purpose
