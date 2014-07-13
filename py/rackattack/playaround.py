@@ -20,10 +20,14 @@ allocation = client.allocate(
     allocationInfo=api.AllocationInfo(user=args.user, purpose="playaround", nice=args.nice))
 allocation.wait(timeout=5 * 60)
 assert allocation.done(), "Allocation failed"
-print "Done allocating"
+print "Done allocating, Waiting for boot to finish"
 try:
     node = allocation.nodes()['node']
     credentials = node.rootSSHCredentials()
+    ssh = connection.Connection(**credentials)
+    ssh.waitForTCPServer()
+    ssh.connect()
+    ssh.close()
     print "ROOT SSH Credentials:"
     print credentials
     print "Opening ssh session. Close it to free up allocation"
