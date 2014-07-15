@@ -1,5 +1,6 @@
 from rackattack import api
 from rackattack.tcp import node
+from rackattack.tcp import suicide
 import threading
 import logging
 
@@ -11,6 +12,7 @@ class Allocation(api.Allocation):
         self._ipcClient = ipcClient
         self._heartbeat = heartbeat
         self._subscribe = subscribe
+        self._forceReleaseCallback = None
         self._dead = False
         self._waitEvent = threading.Event()
         self._subscribe.register(self._eventBroadcasted)
@@ -59,12 +61,24 @@ class Allocation(api.Allocation):
         self._heartbeat.unregister(self._id)
 
     def setForceReleaseCallback(self, callback):
-        raise NotImplementedError("here")
+        self._forceReleaseCallback = callback
 
     def _eventBroadcasted(self, event):
         if event.get('event', None) == "allocation__changedState" and \
                 event.get('allocationID', None) == self._id:
             self._waitEvent.set()
-        if event.get('event', None) == "allocation__providerMessage" and \
+        elif event.get('event', None) == "allocation__providerMessage" and \
                 event.get('allocationID', None) == self._id:
             logging.info("Rackattack provider says: %(message)s", dict(message=event['message']))
+        elif event.get('event', None) == "allocation__withdrawn" and \
+                event.get('allocationID', None) == self._id:
+            if self._forceReleaseCallback is None:
+                logging.error(
+                    "Rackattack provider widthdrew allocation: '%(message)s'. No ForceRelease callback is "
+                    "registered. Commiting suicide", dict(message=event['message']))
+                suicide.killSelf()
+            else:
+                logging.warning(
+                    "Rackattack provider widthdrew allocation: '%(message)s'. ForceRelease callback is "
+                    "registered. Calling...", dict(message=event['message']))
+                self._forceReleaseCallback()
