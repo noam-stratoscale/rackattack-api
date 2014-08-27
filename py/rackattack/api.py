@@ -147,3 +147,9 @@ class Node:
         to reboot, due long bios wakeup times.
         """
         assert False, "Deriving class must implement"
+
+    def fetchSerialLog(self):
+        """
+        Download the serial logs of this node, from the allocation time.
+        """
+        assert False, "Deriving class must implement"

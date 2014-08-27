@@ -37,3 +37,7 @@ class Node(api.Node):
     def coldRestart(self):
         return self._ipcClient.call(
             'node__coldRestart', allocationID=self._allocation._idForNodeIPC(), nodeID=self._id)
+
+    def fetchSerialLog(self):
+        return self._ipcClient.call(
+            'node__fetchSerialLog', allocationID=self._allocation._idForNodeIPC(), nodeID=self._id)
