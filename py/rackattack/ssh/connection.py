@@ -62,7 +62,7 @@ class Connection:
             ** password)
         self._sshClient.get_transport().set_keepalive(15)
 
-    def waitForTCPServer(self, timeout=30, interval=0.1):
+    def waitForTCPServer(self, timeout=60, interval=0.1):
         before = time.time()
         while time.time() - before < timeout:
             if self._rawTCPConnect((self._hostname, self._port)):

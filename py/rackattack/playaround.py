@@ -18,7 +18,7 @@ print "Allocating"
 allocation = client.allocate(
     requirements={'node': api.Requirement(imageLabel=args.label, imageHint="playaround")},
     allocationInfo=api.AllocationInfo(user=args.user, purpose="playaround", nice=args.nice))
-allocation.wait(timeout=5 * 60)
+allocation.wait(timeout=8 * 60)
 assert allocation.done(), "Allocation failed"
 print "Done allocating, Waiting for boot to finish"
 try:
