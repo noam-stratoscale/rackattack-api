@@ -13,7 +13,14 @@ class Client(api.Client):
         self._socket.connect(providerRequestLocation)
         self._socket.setsockopt(zmq.LINGER, 0)
         self._lock = threading.Lock()
-        self.call("handshake", version=api.VERSION)
+        self.call("handshake", versionInfo=dict(
+            RACKATTACK_VERSION=api.VERSION,
+            ZERO_MQ=dict(
+                PYZMQ_VERSION=zmq.pyzmq_version(),
+                VERSION=zmq.VERSION,
+                VERSION_MAJOR=zmq.VERSION_MAJOR,
+                VERSION_MINOR=zmq.VERSION_MINOR,
+                VERSION_PATCH=zmq.VERSION_PATCH)))
         self._subscribe = subscribe.Subscribe(connectTo=providerSubscribeLocation)
         self._heartbeat = heartbeat.HeartBeat(self)
 
