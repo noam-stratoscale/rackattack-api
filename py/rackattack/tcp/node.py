@@ -29,11 +29,6 @@ class Node(api.Node):
     def ipAddress(self):
         return self._info['ipAddress']
 
-    def setPXEParameters(self, answerDHCP=True, assimilatorParameters=None):
-        return self._ipcClient.call(
-            'node__setPXEParameters', allocationID=self._allocation._idForNodeIPC(),
-            nodeID=self._id, answerDHCP=answerDHCP, assimilatorParameters=assimilatorParameters)
-
     def coldRestart(self):
         return self._ipcClient.call(
             'node__coldRestart', allocationID=self._allocation._idForNodeIPC(), nodeID=self._id)
@@ -41,3 +36,6 @@ class Node(api.Node):
     def fetchSerialLog(self):
         return self._ipcClient.call(
             'node__fetchSerialLog', allocationID=self._allocation._idForNodeIPC(), nodeID=self._id)
+
+    def networkInfo(self):
+        return self._info

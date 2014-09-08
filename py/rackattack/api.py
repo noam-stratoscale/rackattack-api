@@ -137,9 +137,6 @@ class Node:
         "IP address assigned at DHCP to the primary NIC"
         assert False, "Deriving class must implement"
 
-    def setPXEParameters(self, answerDHCP=True, assimilatorParameters=None):
-        assert False, "Deriving class must implement"
-
     def coldRestart(self):
         """
         cold reboot the host, for testing purposes. This "pulls the switch", does not
@@ -151,5 +148,12 @@ class Node:
     def fetchSerialLog(self):
         """
         Download the serial logs of this node, from the allocation time.
+        """
+        assert False, "Deriving class must implement"
+
+    def networkInfo(self):
+        """
+        returns a dictionary with all network paramters (repeats ipAddress, but also
+        includes netmask, osmosisServerIP, inauguratorServerIP, and so forth
         """
         assert False, "Deriving class must implement"
