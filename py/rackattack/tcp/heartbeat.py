@@ -1,7 +1,6 @@
 import threading
 import logging
 import time
-from rackattack.tcp import suicide
 
 HEARTBEAT_OK = "OK"
 
@@ -30,8 +29,11 @@ class HeartBeat(threading.Thread):
                     continue
                 response = self._client.call('heartbeat', ids=self._ids)
                 if response != HEARTBEAT_OK:
-                    logging.error("Rackattack heartbeat failed: '%(message)s'. Commiting suicide")
-                    suicide.killSelf()
+                    logging.error("Rackattack heartbeat failed: '%(message)s'", dict(message=response))
+                    raise Exception("Rackattack heartbeat failed: '%s'" % response)
         except:
-            logging.exception("Rackattack heartbeat thread is dead. Commiting suicide")
-            suicide.killSelf()
+            logging.exception("Rackattack heartbeat thread dies")
+            raise
+        finally:
+            logging.error("heartbeat thread notifies client about failure")
+            self._client.heartbeatFailed()

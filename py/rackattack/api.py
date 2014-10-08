@@ -19,6 +19,16 @@ class Client:
         """
         assert False, "Deriving class must implement"
 
+    def setConnectionToProviderInterruptedCallback(self, callback):
+        """
+        the callback will be called (zero parameters) when the provider stops
+        responding to heartbeats. This is not mandatory, the default behaviour
+        is to SIGTERM this process.
+        This is mainly useful for writing daemons that allocate resources, not
+        for testing and scripts
+        """
+        assert False, "Deriving class must implement"
+
 
 class Requirement:
     def __init__(self, imageLabel, imageHint, hardwareConstraints=None):

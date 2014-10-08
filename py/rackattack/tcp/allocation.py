@@ -13,7 +13,7 @@ class Allocation(api.Allocation):
         self._heartbeat = heartbeat
         self._subscribe = subscribe
         self._forceReleaseCallback = None
-        self._dead = False
+        self._dead = None
         self._waitEvent = threading.Event()
         self._subscribe.register(self._eventBroadcasted)
         self._heartbeat.register(id)
@@ -30,10 +30,11 @@ class Allocation(api.Allocation):
         return self._ipcClient.call('allocation__done', id=self._id)
 
     def dead(self):
+        if self._dead:
+            return self._dead
         result = self._ipcClient.call('allocation__dead', id=self._id)
-        if result:
-            self._dead = True
-        return result
+        self._dead = result
+        return self._dead
 
     def wait(self, timeout=None):
         self._waitEvent.wait(timeout=timeout)
@@ -57,11 +58,20 @@ class Allocation(api.Allocation):
     def free(self):
         logging.info("freeing allocation")
         self._ipcClient.call('allocation__free', id=self._id)
-        self._dead = True
+        self._dead = "freed"
+        self._close()
+
+    def _close(self):
         self._heartbeat.unregister(self._id)
+        self._ipcClient.allocationClosed(self)
+        self._waitEvent.set()
 
     def setForceReleaseCallback(self, callback):
         self._forceReleaseCallback = callback
+
+    def connectionToProviderInterrupted(self):
+        self._dead = "connection to provider terminated"
+        self._close()
 
     def _eventBroadcasted(self, event):
         if event.get('event', None) == "allocation__changedState" and \

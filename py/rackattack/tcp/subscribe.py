@@ -25,6 +25,10 @@ class Subscribe(threading.Thread):
         assert callback in self._registered
         self._registered.remove(callback)
 
+    def close(self):
+        self._socket.close()
+        self._context.destroy()
+
     def run(self):
         try:
             logging.info(
@@ -33,6 +37,8 @@ class Subscribe(threading.Thread):
             while True:
                 try:
                     self._work()
+                except zmq.ContextTerminated:
+                    raise
                 except:
                     logging.exception("Handling Published Event")
         except:
