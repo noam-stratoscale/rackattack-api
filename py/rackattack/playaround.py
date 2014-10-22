@@ -33,6 +33,19 @@ try:
         ssh.waitForTCPServer()
         ssh.connect()
         ssh.close()
+        try:
+            ssh = connection.Connection(**credentials)
+            ssh.waitForTCPServer()
+            ssh.connect()
+            ssh.close()
+        except:
+            try:
+                log = node.fetchSerialLog()
+                open("/tmp/serial.log", "w").write(log)
+                print "serial log stored in /tmp/serial.log"
+            except Exception as e:
+                print "Unable to fetch serial log: %s" % e
+            raise
         print "Opening ssh session. Close it to free up allocation"
         os.system(
             "sshpass -p %(password)s ssh -o ServerAliveInterval=5 -o ServerAliveCountMax=1 "
