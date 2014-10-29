@@ -123,6 +123,14 @@ class Allocation:
     def setForceReleaseCallback(self, callback):
         assert False, "Deriving class must implement"
 
+    def fetchPostMortemPack(self):
+        """
+        Fetch debugging information about the allocation. Usefull for
+        debugging timeouts and such.
+        returns filename, contents
+        """
+        assert False, "Deriving class must implement"
+
 
 class Node:
     def rootSSHCredentials(self):

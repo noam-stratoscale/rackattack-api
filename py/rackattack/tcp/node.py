@@ -38,7 +38,8 @@ class Node(api.Node):
 
     def fetchSerialLog(self):
         return self._ipcClient.call(
-            'node__fetchSerialLog', allocationID=self._allocation._idForNodeIPC(), nodeID=self._id)
+            'node__fetchSerialLog', allocationID=self._allocation._idForNodeIPC(), nodeID=self._id,
+            ipcTimeoutMS=30 * 1000)
 
     def networkInfo(self):
         return self._info

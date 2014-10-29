@@ -55,6 +55,10 @@ class Allocation(api.Allocation):
             result[name] = nodeInstance
         return result
 
+    def fetchPostMortemPack(self):
+        return self._ipcClient.call(
+            'allocation__fetchPostMortemPack', id=self._id, ipcTimeoutMS=30*1000)
+
     def free(self):
         logging.info("freeing allocation")
         self._ipcClient.call('allocation__free', id=self._id)
