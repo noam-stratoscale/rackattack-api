@@ -17,6 +17,9 @@ class Node(api.Node):
         return self._ipcClient.call(
             "node__rootSSHCredentials", allocationID=self._allocation._idForNodeIPC(), nodeID=self._id)
 
+    def id(self):
+        return self._id
+
     def name(self):
         return self._name
 

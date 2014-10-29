@@ -132,7 +132,12 @@ class Node:
         """
         assert False, "Deriving class must implement"
 
+    def id(self):
+        "Returns the provider's internal id representing this specific host"
+        assert False, "Deriving class must implement"
+
     def name(self):
+        "Returns the role name of the host as request when creating the allocation"
         assert False, "Deriving class must implement"
 
     def primaryMACAddress(self):
