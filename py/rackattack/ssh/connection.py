@@ -6,6 +6,7 @@ import logging
 from rackattack.ssh import ftp
 from rackattack.ssh import run
 from rackattack.ssh import dirftp
+from rackattack.ssh import tunnel
 
 
 def discardParamikoLogs():
@@ -25,6 +26,7 @@ class Connection:
         self._key = key
         self._port = port
         self._sshClient = None
+        self._tunnel = None
 
     @property
     def run(self):
@@ -38,7 +40,16 @@ class Connection:
     def dirFTP(self):
         return dirftp.DirFTP(self._sshClient)
 
+    @property
+    def tunnel(self):
+        if self._tunnel is None:
+            self._tunnel = tunnel.Tunnel(self._openDirectTCPIPChannelCallback)
+        return self._tunnel
+
     def close(self):
+        if self._tunnel is not None:
+            self._tunnel.close()
+            self._tunnel = None
         self._sshClient.close()
         self._sshClient = None
 
@@ -80,3 +91,9 @@ class Connection:
             return False
         finally:
             s.close()
+
+    def _openDirectTCPIPChannelCallback(self, remoteEndpoint, localEndpoint):
+        result = self._sshClient.get_transport().open_channel('direct-tcpip', remoteEndpoint, localEndpoint)
+        if result is None:
+            raise Exception("Remote SSH server rejected local forwarding tunnel to %s", (remoteEndpoint,))
+        return result

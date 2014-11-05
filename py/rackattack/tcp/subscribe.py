@@ -39,6 +39,8 @@ class Subscribe(threading.Thread):
                     self._work()
                 except zmq.ContextTerminated:
                     raise
+                except zmq.ZMQError:
+                    raise
                 except:
                     logging.exception("Handling Published Event")
         except:
