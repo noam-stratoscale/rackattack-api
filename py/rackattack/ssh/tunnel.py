@@ -28,8 +28,10 @@ class Tunnel(threading.Thread):
         return forwarder.port()
 
     def manyLocalForwards(self, remoteEndpoints):
+        result = dict()
         for endpoint in remoteEndpoints:
-            self.localForward(endpoint)
+            result[endpoint] = self.localForward(endpoint)
+        return result
 
     def stopAll(self):
         self._pleaseCloseWorkers = True
