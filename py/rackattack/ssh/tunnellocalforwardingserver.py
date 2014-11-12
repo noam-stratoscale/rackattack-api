@@ -17,6 +17,9 @@ class TunnelLocalForwardingServer:
         self._socket.bind(("", 0))
         self._socket.listen(5)
 
+    def remoteEndpoint(self):
+        return self._remoteEndpoint
+
     def port(self):
         return self._socket.getsockname()[1]
 

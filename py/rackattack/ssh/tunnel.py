@@ -12,6 +12,7 @@ class Tunnel(threading.Thread):
         self._workers = []
         self._pleaseCloseWorkers = False
         self._closed = False
+        self._localForwardMap = {}
         self._readFD, self._writeFD = os.pipe()
         threading.Thread.__init__(self)
         self.daemon = True
@@ -25,6 +26,7 @@ class Tunnel(threading.Thread):
             remoteEndpoint=remoteEndpoint)
         self._workers.append(forwarder)
         self._wakeUp()
+        self._localForwardMap[remoteEndpoint] = forwarder.port()
         return forwarder.port()
 
     def manyLocalForwards(self, remoteEndpoints):
@@ -32,6 +34,9 @@ class Tunnel(threading.Thread):
         for endpoint in remoteEndpoints:
             result[endpoint] = self.localForward(endpoint)
         return result
+
+    def localForwardMap(self):
+        return self._localForwardMap
 
     def stopAll(self):
         self._pleaseCloseWorkers = True
@@ -62,6 +67,7 @@ class Tunnel(threading.Thread):
             worker.work(r)
             if worker.done():
                 worker.close()
+                self._removeFromMaps(worker)
                 self._workers.remove(worker)
         if self._readFD in r:
             os.read(self._readFD, 1)
@@ -72,7 +78,16 @@ class Tunnel(threading.Thread):
     def _closeWorkers(self):
         while len(self._workers) > 0:
             worker = self._workers.pop(0)
+            self._removeFromMaps(worker)
             worker.close()
+
+    def _removeFromMaps(self, worker):
+        if not hasattr(worker, 'remoteEndpoint'):
+            return
+        if worker.remoteEndpoint() in self._localForwardMap:
+            del self._localForwardMap[worker.remoteEndpoint()]
+        if worker.remoteEndpoint()[1] in self._localForwardMap:
+            del self._localForwardMap[worker.remoteEndpoint()[1]]
 
     def _addConnection(self, connection):
         self._workers.append(connection)

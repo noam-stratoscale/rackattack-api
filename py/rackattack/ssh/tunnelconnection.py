@@ -15,7 +15,7 @@ class TunnelConnection:
 
     def close(self):
         if not self.done():
-            self._logger.info("Shutting down SSH tunneling connection due script request")
+            self._logger.debug("Shutting down SSH tunneling connection due script request")
         if not self._shutdownFromRemote:
             self._socket.shutdown(socket.SHUT_WR)
             self._shutdownFromRemote = True
@@ -52,9 +52,9 @@ class TunnelConnection:
             if len(data) == 0:
                 self._shutdownFromRemote = True
                 self._socket.shutdown(socket.SHUT_WR)
-                self._logger.info("SSH forward channel got shutdown from remote")
+                self._logger.debug("SSH forward channel got shutdown from remote")
                 if self.done():
-                    self._logger.info("Both ends shutdown, closing connection")
+                    self._logger.debug("Both ends shutdown, closing connection")
                     self.close()
             else:
                 self._socket.send(data)
@@ -68,9 +68,9 @@ class TunnelConnection:
             if len(data) == 0:
                 self._shutdownToRemote = True
                 self._channel.shutdown(socket.SHUT_WR)
-                self._logger.info("SSH forward channel got shutdown from local")
+                self._logger.debug("SSH forward channel got shutdown from local")
                 if self.done():
-                    self._logger.info("Both ends shutdown, closing connection")
+                    self._logger.debug("Both ends shutdown, closing connection")
                     self.close()
             else:
                 self._channel.send(data)

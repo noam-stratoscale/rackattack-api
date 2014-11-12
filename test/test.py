@@ -45,6 +45,8 @@ class Test(unittest.TestCase):
             ssh.run.backgroundScript("python /tmp/server.py 7788 hello")
             port = ssh.tunnel.localForward(7788)
             port2 = ssh.tunnel.localForward(7789)
+            self.assertEquals(ssh.tunnel.localForwardMap()[7788], port)
+            self.assertEquals(ssh.tunnel.localForwardMap()[7789], port2)
             self.assertIn('hello', self._receiveAll(port))
             self.assertIn('hello', self._receiveAll(port))
             self.assertIn('hello', self._receiveAll(port))
