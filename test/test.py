@@ -40,7 +40,7 @@ class Test(unittest.TestCase):
             raise Exception("simpleusecase.py failed %d" % result)
 
     def test_LocalForwardingTunnel(self):
-        with self._allocateOne() as (node, ssh):
+        with self._allocateOne() as (node, ssh, allocation):
             ssh.ftp.putFile("/tmp/server.py", TCPSERVER_SENDMESSAGE)
             ssh.run.backgroundScript("python /tmp/server.py 7788 hello")
             port = ssh.tunnel.localForward(7788)
@@ -83,7 +83,7 @@ class Test(unittest.TestCase):
                 ssh.waitForTCPServer()
                 ssh.connect()
                 print "SSH connected"
-                yield it, ssh
+                yield it, ssh, allocation
             finally:
                 allocation.free()
         finally:
@@ -109,6 +109,11 @@ class Test(unittest.TestCase):
             s.sendall(message)
         finally:
             s.close()
+
+    def test_SerialAndPostMortemPack(self):
+        with self._allocateOne() as (node, ssh, allocation):
+            node.fetchSerialLog()
+            allocation.fetchPostMortemPack()
 
 
 if __name__ == '__main__':

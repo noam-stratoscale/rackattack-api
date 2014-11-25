@@ -56,8 +56,11 @@ class Allocation(api.Allocation):
         return result
 
     def fetchPostMortemPack(self):
-        return self._ipcClient.call(
-            'allocation__fetchPostMortemPack', id=self._id, ipcTimeoutMS=30*1000)
+        connection = self._ipcClient.urlopen("/allocation/%s/postMortemPack" % self._id)
+        try:
+            return connection.read()
+        finally:
+            connection.close()
 
     def free(self):
         logging.info("freeing allocation")

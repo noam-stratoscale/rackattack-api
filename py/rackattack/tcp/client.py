@@ -6,10 +6,15 @@ from rackattack.tcp import heartbeat
 from rackattack.tcp import subscribe
 from rackattack.tcp import suicide
 import logging
+import urllib2
 
 
 class Client(api.Client):
-    def __init__(self, providerRequestLocation, providerSubscribeLocation):
+    def __init__(self,
+                 providerRequestLocation,
+                 providerSubscribeLocation,
+                 providerHTTPLocation):
+        self._providerHTTPLocation = providerHTTPLocation
         self._context = zmq.Context()
         self._socket = self._context.socket(zmq.REQ)
         self._socket.connect(providerRequestLocation)
@@ -52,6 +57,10 @@ class Client(api.Client):
         except:
             self._notifyAllActiveAllocationsThatConnectionToProviderInterrupted()
             raise
+
+    def urlopen(self, path):
+        url = self._providerHTTPLocation.rstrip("/") + "/" + path.lstrip("/")
+        return urllib2.urlopen(url)
 
     def _call(self, cmd, ipcTimeoutMS, arguments):
         self._socket.send_json(dict(cmd=cmd, arguments=arguments))

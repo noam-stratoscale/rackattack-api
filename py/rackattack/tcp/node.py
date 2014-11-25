@@ -37,9 +37,11 @@ class Node(api.Node):
             'node__coldRestart', allocationID=self._allocation._idForNodeIPC(), nodeID=self._id)
 
     def fetchSerialLog(self):
-        return self._ipcClient.call(
-            'node__fetchSerialLog', allocationID=self._allocation._idForNodeIPC(), nodeID=self._id,
-            ipcTimeoutMS=30 * 1000)
+        connection = self._ipcClient.urlopen("/host/%s/serialLog" % self._id)
+        try:
+            return connection.read()
+        finally:
+            connection.close()
 
     def networkInfo(self):
         return self._info
