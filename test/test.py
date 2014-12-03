@@ -78,6 +78,8 @@ class Test(unittest.TestCase):
                 nodes = allocation.nodes()
                 assert len(nodes) == 1, nodes
                 it = nodes['it']
+                it.fetchSerialLog()
+                allocation.fetchPostMortemPack()
                 print "SSH credentials:", it.rootSSHCredentials()
                 ssh = connection.Connection(**it.rootSSHCredentials())
                 ssh.waitForTCPServer()

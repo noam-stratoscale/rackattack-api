@@ -58,7 +58,7 @@ class Allocation(api.Allocation):
     def fetchPostMortemPack(self):
         connection = self._ipcClient.urlopen("/allocation/%s/postMortemPack" % self._id)
         try:
-            return connection.read()
+            return "postMortemPack.txt", connection.read()
         finally:
             connection.close()
 
