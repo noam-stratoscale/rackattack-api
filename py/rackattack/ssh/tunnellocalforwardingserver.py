@@ -44,7 +44,7 @@ class TunnelLocalForwardingServer:
             channel = self._openDirectTCPIPChannelCallback(
                 remoteEndpoint=self._remoteEndpoint, localEndpoint=peer)
         except:
-            self._logger.exception("Unable to connect to remote endpoint %(endpoint)s", dict(
+            self._logger.debug("Unable to connect to remote endpoint %(endpoint)s", dict(
                 endpoint=self._remoteEndpoint))
             connection.close()
             return
