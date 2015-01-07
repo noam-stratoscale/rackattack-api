@@ -1,5 +1,6 @@
 import socket
 import logging
+import errno
 
 
 class TunnelConnection:
@@ -17,10 +18,10 @@ class TunnelConnection:
         if not self.done():
             self._logger.debug("Shutting down SSH tunneling connection due script request")
         if not self._shutdownFromRemote:
-            self._socket.shutdown(socket.SHUT_WR)
+            self._safeShutdown(self._socket, socket.SHUT_WR)
             self._shutdownFromRemote = True
         if not self._shutdownToRemote:
-            self._channel.shutdown(socket.SHUT_WR)
+            self._safeShutdown(self._channel, socket.SHUT_WR)
             self._shutdownToRemote = True
         if self._channel is not None:
             self._channel.close()
@@ -49,28 +50,45 @@ class TunnelConnection:
             return
         if self._channel in readReadySockets:
             data = self._channel.recv(2048)
+            if len(data) != 0:
+                try:
+                    self._socket.send(data)
+                except socket.error as e:
+                    if e.errno not in [ errno.EPIPE, errno.ECONNRESET, errno.ENOTCONN ]:
+                        raise
+                    data = ""
             if len(data) == 0:
                 self._shutdownFromRemote = True
-                self._socket.shutdown(socket.SHUT_WR)
+                self._safeShutdown(self._socket, socket.SHUT_WR)
                 self._logger.debug("SSH forward channel got shutdown from remote")
                 if self.done():
                     self._logger.debug("Both ends shutdown, closing connection")
                     self.close()
-            else:
-                self._socket.send(data)
 
     def _workToRemote(self, readReadySockets):
         if self._shutdownToRemote:
             assert self._socket not in readReadySockets
             return
         if self._socket in readReadySockets:
-            data = self._socket.recv(2048)
+            try:
+                data = self._socket.recv(2048)
+            except socket.error as e:
+                if e.errno not in [ errno.EPIPE, errno.ECONNRESET, errno.ENOTCONN ]:
+                    raise
+                data = ""
             if len(data) == 0:
                 self._shutdownToRemote = True
-                self._channel.shutdown(socket.SHUT_WR)
+                self._safeShutdown(self._channel, socket.SHUT_WR)
                 self._logger.debug("SSH forward channel got shutdown from local")
                 if self.done():
                     self._logger.debug("Both ends shutdown, closing connection")
                     self.close()
             else:
                 self._channel.send(data)
+
+    def _safeShutdown(self, thing, shutdownFlag):
+        try:
+            thing.shutdown(shutdownFlag)
+        except socket.error as e:
+            if e.errno not in [ errno.EPIPE, errno.ECONNRESET, errno.ENOTCONN ]:
+                raise
