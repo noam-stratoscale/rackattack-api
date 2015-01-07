@@ -1,11 +1,10 @@
-import zmq
 from rackattack import api
 import threading
 from rackattack.tcp import allocation
 from rackattack.tcp import heartbeat
 from rackattack.tcp import subscribe
 from rackattack.tcp import suicide
-import logging
+from rackattack.tcp import transport
 import urllib2
 
 
@@ -15,21 +14,11 @@ class Client(api.Client):
                  providerSubscribeLocation,
                  providerHTTPLocation):
         self._providerHTTPLocation = providerHTTPLocation
-        self._context = zmq.Context()
-        self._socket = self._context.socket(zmq.REQ)
-        self._socket.connect(providerRequestLocation)
-        self._socket.setsockopt(zmq.LINGER, 0)
+        self._request = transport.Transport(providerRequestLocation)
         self._lock = threading.Lock()
         self._closed = False
         self._activeAllocations = []
-        self.call("handshake", versionInfo=dict(
-            RACKATTACK_VERSION=api.VERSION,
-            ZERO_MQ=dict(
-                PYZMQ_VERSION=zmq.pyzmq_version(),
-                VERSION=zmq.VERSION,
-                VERSION_MAJOR=zmq.VERSION_MAJOR,
-                VERSION_MINOR=zmq.VERSION_MINOR,
-                VERSION_PATCH=zmq.VERSION_PATCH)))
+        self.call("handshake", versionInfo=dict(RACKATTACK_VERSION=api.VERSION))
         self._subscribe = subscribe.Subscribe(connectTo=providerSubscribeLocation)
         self._connectionToProviderInterrupted = suicide.killSelf
         self._heartbeat = heartbeat.HeartBeat(self)
@@ -48,12 +37,12 @@ class Client(api.Client):
         self._activeAllocations.append(allocationInstance)
         return allocationInstance
 
-    def call(self, cmd, ipcTimeoutMS=3000, ** kwargs):
+    def call(self, cmd, ipcTimeout=10, ** kwargs):
         try:
             with self._lock:
                 if self._closed:
                     raise Exception("Already closed")
-                return self._call(cmd, ipcTimeoutMS, kwargs)
+                return self._call(cmd, ipcTimeout, kwargs)
         except:
             self._notifyAllActiveAllocationsThatConnectionToProviderInterrupted()
             raise
@@ -62,13 +51,9 @@ class Client(api.Client):
         url = self._providerHTTPLocation.rstrip("/") + "/" + path.lstrip("/")
         return urllib2.urlopen(url)
 
-    def _call(self, cmd, ipcTimeoutMS, arguments):
-        self._socket.send_json(dict(cmd=cmd, arguments=arguments))
-        hasData = self._socket.poll(ipcTimeoutMS)
-        if not hasData:
-            self._closeLocked()
-            raise Exception("IPC command '%s' timed out" % cmd)
-        result = self._socket.recv_json(zmq.NOBLOCK)
+    def _call(self, cmd, ipcTimeout, arguments):
+        self._request.sendJSON(dict(cmd=cmd, arguments=arguments))
+        result = self._request.receiveJSON(timeout=ipcTimeout)
         if isinstance(result, dict) and 'exceptionType' in result:
             if result['exceptionType'] == 'NotEnoughResourcesForAllocation':
                 raise api.NotEnoughResourcesForAllocation(result['exceptionString'])
@@ -88,8 +73,7 @@ class Client(api.Client):
         self._closed = True
         if hasattr(self, '_subscribe'):
             self._subscribe.close()
-        self._socket.close()
-        self._context.destroy()
+        self._request.close()
 
     def heartbeatFailed(self):
         self._notifyAllActiveAllocationsThatConnectionToProviderInterrupted()

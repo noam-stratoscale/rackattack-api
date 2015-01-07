@@ -1,48 +1,56 @@
 import threading
-import zmq
 import logging
-import simplejson
+import errno
+import socket
+from rackattack.tcp import transport
 
 
 class Subscribe(threading.Thread):
+    _SAFE_TERMINATION_ERRORS = [errno.EPIPE, errno.ECONNRESET, errno.ENOTCONN, errno.EBADF]
+
     def __init__(self, connectTo):
         self._connectTo = connectTo
-        self._context = zmq.Context()
-        self._socket = self._context.socket(zmq.SUB)
-        self._socket.connect(self._connectTo)
-        ALL_MESSAGES = "{"
-        self._socket.setsockopt(zmq.SUBSCRIBE, ALL_MESSAGES)
-        self._registered = []
+        self._transport = transport.Transport(connectTo)
+        self._registered = dict()
         threading.Thread.__init__(self)
         self.daemon = True
         threading.Thread.start(self)
 
-    def register(self, callback):
-        assert callback not in self._registered
-        self._registered.append(callback)
+    def register(self, callback, topic="default topic"):
+        assert callback not in self._registered.get(topic, [])
+        topicList = self._registered.setdefault(topic, [])
+        topicList.append(callback)
+        if len(topicList) == 1:
+            self._transport.sendJSON(dict(cmd='subscribe', topic=topic))
 
-    def unregister(self, callback):
-        assert callback in self._registered
-        self._registered.remove(callback)
+    def unregister(self, callback, topic="default topic"):
+        assert callback in self._registered.get(topic, [])
+        topicList = self._registered[topic]
+        topicList.remove(callback)
+        if len(topicList) == 0:
+            self._transport.sendJSON(dict(cmd='unsubscribe', topic=topic))
 
     def close(self):
-        self._socket.close()
-        self._context.destroy()
+        self._transport.close()
 
     def run(self):
         try:
             logging.info(
                 "Rackattack Subscriber started connected to '%(connectTo)s' started",
                 dict(connectTo=self._connectTo))
-            while True:
+            while not self._transport.closed():
                 try:
                     self._work()
-                except zmq.ContextTerminated:
+                except transport.LocalyClosedError:
+                    logging.info("Rackattack subscriber transport closed, locally")
+                    return
+                except transport.RemotelyClosedError:
+                    logging.error("Rackattack subscriber transport closed, remotely")
                     raise
-                except zmq.ZMQError:
-                    raise
-                except:
-                    logging.exception("Handling Published Event")
+                except socket.error as e:
+                    if e.errno not in self._SAFE_TERMINATION_ERRORS:
+                        raise
+            logging.info("Rackattack subscriber transport closed")
         except:
             logging.exception(
                 "Rackattack Subscriber connected to '%(connectTo)s' aborts",
@@ -50,11 +58,9 @@ class Subscribe(threading.Thread):
             raise
 
     def _work(self):
-        FLAGS = 0
-        message = self._socket.recv(FLAGS)
+        message = self._transport.receiveJSON(timeout=None)
         try:
-            event = simplejson.loads(message)
-            for callback in list(self._registered):
-                callback(event)
+            for callback in list(self._registered.get(message['topic'])):
+                callback(message['arguments'])
         except Exception:
             logging.exception('Handling Published Event')

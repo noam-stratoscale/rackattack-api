@@ -5,9 +5,12 @@ import test
 import time
 import contextlib
 import socket
+import threading
 from rackattack import clientfactory
 from rackattack.ssh import connection
 from rackattack import api
+from rackattack.tcp import transport
+from rackattack.tcp import subscribe
 
 
 SIMPLE_USE_CASE = os.path.join(os.path.dirname(test.__file__), "simpleusecase.py")
@@ -116,6 +119,64 @@ class Test(unittest.TestCase):
         with self._allocateOne() as (node, ssh, allocation):
             node.fetchSerialLog()
             allocation.fetchPostMortemPack()
+
+    def test_TransportSimpleEcho(self):
+        port = self._freeTCPPort()
+        popen = subprocess.Popen(["python", "test/twistedserver_echojson.py", str(port)])
+        self._waitForServerToBeReady(port)
+        try:
+            tested = transport.Transport("tcp://localhost:%d" % port)
+            try:
+                tested.sendJSON(dict(cmd='echo', arguments=dict(arg1="eran", arg2="shlomp")))
+                result = tested.receiveJSON(3)
+                self.assertEquals(result, ["Echoing", dict(cmd='echo', arguments=dict(arg1="eran", arg2="shlomp"))])
+            finally:
+                tested.close()
+        finally:
+            popen.terminate()
+
+    def test_TransportPublish(self):
+        port = self._freeTCPPort()
+        popen = subprocess.Popen(["python", "test/twistedserver_publishperiodically.py", str(port)])
+        self._waitForServerToBeReady(port)
+        global testEvent
+        testEvent = threading.Event()
+        def setEvent(arguments):
+            if arguments != dict(data="fake data"):
+                raise Exception("Bad arguments: %s" % (arguments,))
+            global testEvent
+            testEvent.set()
+        try:
+            tested = subscribe.Subscribe("tcp://localhost:%d" % port)
+            try:
+                tested.register(setEvent)
+                testEvent.wait(1)
+                self.assertTrue(testEvent.isSet())
+            finally:
+                tested.close()
+        finally:
+            popen.terminate()
+
+    def _freeTCPPort(self):
+        sock = socket.socket()
+        try:
+            sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            sock.bind(("", 0))
+            return sock.getsockname()[1]
+        finally:
+            sock.close()
+
+    def _waitForServerToBeReady(self, port):
+        for i in xrange(10):
+            sock = socket.socket()
+            try:
+                sock.connect(("localhost", port))
+                return
+            except:
+                time.sleep(0.1)
+            finally:
+                sock.close()
+        raise Exception("Frontend did not start")
 
 
 if __name__ == '__main__':
