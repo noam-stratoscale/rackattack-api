@@ -4,6 +4,8 @@ import errno
 
 
 class TunnelConnection:
+    _SAFE_ERRNOS = [errno.EPIPE, errno.ECONNRESET, errno.ENOTCONN]
+
     def __init__(self, socket, channel):
         self._socket = socket
         self._channel = channel
@@ -54,7 +56,7 @@ class TunnelConnection:
                 try:
                     self._socket.send(data)
                 except socket.error as e:
-                    if e.errno not in [ errno.EPIPE, errno.ECONNRESET, errno.ENOTCONN ]:
+                    if e.errno not in self._SAFE_ERRNOS:
                         raise
                     data = ""
             if len(data) == 0:
@@ -73,7 +75,7 @@ class TunnelConnection:
             try:
                 data = self._socket.recv(2048)
             except socket.error as e:
-                if e.errno not in [ errno.EPIPE, errno.ECONNRESET, errno.ENOTCONN ]:
+                if e.errno not in self._SAFE_ERRNOS:
                     raise
                 data = ""
             if len(data) == 0:
@@ -90,5 +92,5 @@ class TunnelConnection:
         try:
             thing.shutdown(shutdownFlag)
         except socket.error as e:
-            if e.errno not in [ errno.EPIPE, errno.ECONNRESET, errno.ENOTCONN ]:
+            if e.errno not in self._SAFE_ERRNOS:
                 raise

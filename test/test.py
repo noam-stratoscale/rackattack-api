@@ -129,7 +129,8 @@ class Test(unittest.TestCase):
             try:
                 tested.sendJSON(dict(cmd='echo', arguments=dict(arg1="eran", arg2="shlomp")))
                 result = tested.receiveJSON(3)
-                self.assertEquals(result, ["Echoing", dict(cmd='echo', arguments=dict(arg1="eran", arg2="shlomp"))])
+                self.assertEquals(result, ["Echoing", dict(
+                    cmd='echo', arguments=dict(arg1="eran", arg2="shlomp"))])
             finally:
                 tested.close()
         finally:
@@ -141,6 +142,7 @@ class Test(unittest.TestCase):
         self._waitForServerToBeReady(port)
         global testEvent
         testEvent = threading.Event()
+
         def setEvent(arguments):
             if arguments != dict(data="fake data"):
                 raise Exception("Bad arguments: %s" % (arguments,))
