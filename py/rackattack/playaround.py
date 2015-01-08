@@ -25,7 +25,8 @@ assert allocation.done(), "Allocation failed"
 print "Done allocating, Waiting for boot to finish"
 try:
     node = allocation.nodes()['node']
-    credentials = node.rootSSHCredentials()
+    credentials = dict(port=22)
+    credentials.update(node.rootSSHCredentials())
     print "ROOT SSH Credentials:"
     print credentials
     if not args.noSSH:

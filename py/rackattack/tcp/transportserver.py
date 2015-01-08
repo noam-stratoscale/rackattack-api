@@ -18,7 +18,7 @@ class TransportProtocol(basic.Int32StringReceiver):
 
     def stringReceived(self, string):
         try:
-            self._handler(string, self._respond)
+            self._handler(string, self._respond, self.transport.socket.getpeername())
         except:
             logging.exception("Failure handling, aborting connection")
             self.transport.loseConnection()

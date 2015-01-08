@@ -5,7 +5,7 @@ import simplejson
 
 
 class Server:
-    def handle(self, string, respondCallback):
+    def handle(self, string, respondCallback, peer):
         obj = simplejson.loads(string)
         respondCallback(simplejson.dumps(["Echoing", obj]))
 
