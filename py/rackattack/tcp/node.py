@@ -45,3 +45,8 @@ class Node(api.Node):
 
     def networkInfo(self):
         return self._info
+
+    def answerDHCP(self, shouldAnswer):
+        return self._ipcClient.call(
+            'node__answerDHCP', allocationID=self._allocation._idForNodeIPC(),
+            nodeID=self._id, shouldAnswer=shouldAnswer)

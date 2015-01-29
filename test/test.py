@@ -180,6 +180,37 @@ class Test(unittest.TestCase):
                 sock.close()
         raise Exception("Frontend did not start")
 
+    def test_DisablingDHCP(self):
+        with self._allocateOne() as (node, ssh, allocation):
+            try:
+                ssh.run.script("dhclient -r; dhclient eth0")
+                self.assertIn(node.ipAddress(), ssh.run.script("ifconfig"))
+                ssh.run.script("echo still works")
+                node.answerDHCP(False)
+                ssh.run.script("echo still works")
+                ssh.run.backgroundScript("sleep 2; dhclient -r; dhclient eth0; (echo IFCONFIGLINE;"
+                                         "ifconfig -a; echo DHCPDONE) > /dev/console 2>&1")
+                ssh.close()
+                time.sleep(3)
+                try:
+                    ssh.connect()
+                except:
+                    pass
+                else:
+                    raise Exception("Connect must not succeed")
+                before = time.time()
+                while time.time() < before + 120:
+                    serialLog = node.fetchSerialLog()
+                    if 'DHCPDONE' in serialLog:
+                        break
+                    time.sleep(0.2)
+                self.assertIn('DHCPDONE', serialLog)
+                ifconfig = serialLog.split("IFCONFIGLINE")[1]
+                self.assertNotIn(node.ipAddress(), ifconfig)
+            except:
+                import traceback
+                traceback.print_exc()
+
 
 if __name__ == '__main__':
     unittest.main()

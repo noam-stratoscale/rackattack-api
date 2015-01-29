@@ -180,3 +180,13 @@ class Node:
         includes netmask, osmosisServerIP, inauguratorServerIP, and so forth
         """
         assert False, "Deriving class must implement"
+
+    def answerDHCP(self, shouldAnswer):
+        """
+        by specifying shouldAnswer = false, the server will stop answering DHCP
+        requests from the primaryMACAddress of that host. This is useful if you
+        have in that specific test need to utilize PXE. However, make sure to
+        not use an arbitrary address, only resources you may use, since IP
+        conflicts will disable other hosts from being reclaimed correctly.
+        """
+        assert False, "Deriving class must implement"
