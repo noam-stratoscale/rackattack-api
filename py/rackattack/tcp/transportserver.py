@@ -9,7 +9,8 @@ class TransportProtocol(basic.Int32StringReceiver):
     _HEADER = "!I"
 
     def __init__(self, handler):
-        assert self.MAX_LENGTH == 99999, "MAX_LENGTH parameter was changed - make sure you review the new value"
+        assert self.MAX_LENGTH == 99999, \
+            "MAX_LENGTH parameter was changed - make sure you review the new value"
         self._handler = handler
 
     def connectionMade(self):
