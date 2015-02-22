@@ -6,12 +6,16 @@ import errno
 class TunnelConnection:
     _SAFE_ERRNOS = [errno.EPIPE, errno.ECONNRESET, errno.ENOTCONN]
 
-    def __init__(self, socket, channel):
+    def __init__(self, socket, channel, remoteEndpoint):
         self._socket = socket
         self._channel = channel
+        self._remoteEndpoint = remoteEndpoint
         self._logger = logging.getLogger('ssh')
         self._shutdownToRemote = False
         self._shutdownFromRemote = False
+
+    def remoteEndpoint(self):
+        return self._remoteEndpoint
 
     def done(self):
         return self._shutdownFromRemote and self._shutdownToRemote

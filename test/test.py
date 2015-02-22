@@ -1,3 +1,4 @@
+import logging
 import unittest
 import subprocess
 import os
@@ -48,8 +49,10 @@ class Test(unittest.TestCase):
             ssh.run.backgroundScript("python /tmp/server.py 7788 hello")
             port = ssh.tunnel.localForward(7788)
             port2 = ssh.tunnel.localForward(7789)
+            port3 = ssh.tunnel.localForward(7787)
             self.assertEquals(ssh.tunnel.localForwardMap()[7788], port)
             self.assertEquals(ssh.tunnel.localForwardMap()[7789], port2)
+            self.assertEquals(ssh.tunnel.localForwardMap()[7787], port3)
             self.assertIn('hello', self._receiveAll(port))
             self.assertIn('hello', self._receiveAll(port))
             self.assertIn('hello', self._receiveAll(port))
@@ -57,6 +60,9 @@ class Test(unittest.TestCase):
             ssh.run.backgroundScript("python /tmp/server.py 7789 > /tmp/output")
             self._send(port2, "wassup")
             self.assertIn('wassup', ssh.ftp.getContents("/tmp/output"))
+            print "Closing just one tunnel server"
+            ssh.tunnel.stopLocalForward(7787)
+            time.sleep(1)
             print "Stopping all tunnels"
             ssh.tunnel.stopAll()
             with self.assertRaises(Exception):
@@ -214,4 +220,5 @@ class Test(unittest.TestCase):
 
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.DEBUG)
     unittest.main()

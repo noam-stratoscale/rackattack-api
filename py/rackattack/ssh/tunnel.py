@@ -11,6 +11,7 @@ class Tunnel(threading.Thread):
         self._logger = logging.getLogger('ssh')
         self._workers = []
         self._pleaseCloseWorkers = False
+        self._remoteEndpointsToClose = []
         self._closed = False
         self._localForwardMap = {}
         self._readFD, self._writeFD = os.pipe()
@@ -37,6 +38,10 @@ class Tunnel(threading.Thread):
 
     def localForwardMap(self):
         return self._localForwardMap
+
+    def stopLocalForward(self, remoteEndpoint):
+        self._remoteEndpointsToClose.append(remoteEndpoint)
+        self._wakeUp()
 
     def stopAll(self):
         self._pleaseCloseWorkers = True
@@ -74,12 +79,24 @@ class Tunnel(threading.Thread):
         if self._pleaseCloseWorkers:
             self._pleaseCloseWorkers = False
             self._closeWorkers()
+        if len(self._remoteEndpointsToClose) > 0:
+            self._closeWorkersByRemoteEndpoints()
 
     def _closeWorkers(self):
         while len(self._workers) > 0:
             worker = self._workers.pop(0)
             self._removeFromMaps(worker)
             worker.close()
+
+    def _closeWorkersByRemoteEndpoints(self):
+        while len(self._remoteEndpointsToClose) > 0:
+            remoteEndpoint = self._remoteEndpointsToClose.pop()
+            for worker in list(self._workers):
+                if worker.remoteEndpoint() == remoteEndpoint or \
+                        worker.remoteEndpoint() == ('localhost', remoteEndpoint):
+                    self._workers.remove(worker)
+                    self._removeFromMaps(worker)
+                    worker.close()
 
     def _removeFromMaps(self, worker):
         if not hasattr(worker, 'remoteEndpoint'):

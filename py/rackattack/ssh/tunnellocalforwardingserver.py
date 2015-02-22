@@ -27,6 +27,7 @@ class TunnelLocalForwardingServer:
         return False
 
     def close(self):
+        self._logger.debug("Shutting down SSH tunneling local forwarding server due script request")
         self._socket.close()
         self._socket = None
 
@@ -48,7 +49,8 @@ class TunnelLocalForwardingServer:
                 endpoint=self._remoteEndpoint))
             connection.close()
             return
-        tunnelConnection = tunnelconnection.TunnelConnection(socket=connection, channel=channel)
+        tunnelConnection = tunnelconnection.TunnelConnection(
+            socket=connection, channel=channel, remoteEndpoint=self._remoteEndpoint)
         self._addConnectionCallback(tunnelConnection)
         self._logger.debug("Successfully connected %(localEndpoint)s to %(remoteEndpoint)s", dict(
             localEndpoint=peer, remoteEndpoint=self._remoteEndpoint))
